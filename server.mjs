@@ -28,7 +28,7 @@ for (const [canonical, variants] of Object.entries({
 const ANSWER_FIELDS = {
   college: "string", grade: "string", identity: "string", courseTaken: "string", recommendation: "string",
   recommendedCourse: "string", reasons: "array", misconception: "string", mascotKnown: "string", mascotMatch: "string",
-  merchCount: "string", presenceRating: "string", primaryFocus: "string", futureVisibility: "array", lifeCourses: "array",
+  merchCount: "string", merchPreferences: "array", merchPreferenceOther: "string", presenceRating: "string", primaryFocus: "string", futureVisibility: "array", lifeCourses: "array",
   lifeUses: "array", experimentJoined: "string", experimentReasons: "array", keywords: "array", publicCloudConsent: "boolean", privateText: "string"
 };
 
@@ -333,5 +333,5 @@ export function createAppServer({ dataFile = DEFAULT_DATA_FILE, env = process.en
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const port = Number(process.env.PORT) || 4173;
-  createAppServer().listen(port, "0.0.0.0", () => console.log(`心院人格 H5 已启动：http://127.0.0.1:${port}`));
+  createAppServer().listen(port, "0.0.0.0", () => console.log(`心院印象 H5 已启动：http://127.0.0.1:${port}`));
 }

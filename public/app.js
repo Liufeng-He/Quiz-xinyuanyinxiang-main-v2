@@ -25,13 +25,13 @@ const PKU_DEPARTMENTS = [
 ];
 
 const optionSets = {
-  identity: [["external", "🌍 外院系同学"], ["double", "📚 心理学双学位"], ["major", "🧠 心理学主修"]],
+  identity: [["major", "🧠 心理学主修"], ["double", "📚 心理学双学位"], ["external", "🌍 外院系同学"]],
   recommendation: [
-    ["1", "🙅 不推荐，中期见", "目前没有足够理由推荐"],
-    ["2", "🤔 谨慎推荐", "可能只适合部分人"],
-    ["3", "🙂 中规中矩", "还需要更多信息"],
+    ["5", "🌟 很愿意推荐", "会主动推荐给朋友"],
     ["4", "👍 值得一试", "有比较明确的吸引点"],
-    ["5", "📣 强烈推荐，99 点梭哈！", "会主动安利给朋友"]
+    ["3", "🙂 看情况", "还需要更多信息"],
+    ["2", "🤔 谨慎推荐", "可能只适合部分人"],
+    ["1", "🙅 不推荐", "目前没有足够理由推荐"]
   ],
   highReasons: [
     ["teacher", "🎬 老师讲得有画面感"], ["interest", "🎮 体验有趣，感觉没上够"],
@@ -51,13 +51,18 @@ const optionSets = {
   misconception: [
     ["mindread", "🔮 那你猜猜我现在在想什么？（心理学 ≠ 读心术）", "认知"],
     ["hypnosis", "🌀 你会催眠吗，顺便能帮我解个梦吗？（催眠不是必修课，梦也没有标准答案）", "认知 / 临床"],
-    ["development", "👶 发展心理学是不是只研究儿童？（儿童：这个锅我不全背）", "发展"],
+    ["development", "👶 发展心理学就是研究小孩怎么长大的吗？（不只，人的一生都在发展。）", "发展"],
     ["counseling", "💬 没病为什么要做心理咨询？（咨询不必等到“生病”）", "临床与咨询"],
     ["lie", "🕵️ 你是不是一眼就能看出谁在撒谎？（不教怎么测谎）", "社会与人格"],
     ["brain", "🧠 心理学就是看脑电、核磁？（大脑：别什么都问我）", "脑与神经"],
     ["freud", "🛋️ 你们天天研究弗洛伊德吗？（心理学不止精神分析法）", "临床与咨询"]
   ],
   merch: [["0", "☁️ 0 件（目前处于云吸吉祥物阶段）", "还在云吸吉祥物"], ["1-5", "🌱 1–5 件（刚入坑）", "刚刚入坑"], ["6-10", "🌿 6–10 件（稳定扩充中）", "稳定扩充中"], ["11+", "🌳 11 件及以上（周边收藏家）", "周边收藏家"]],
+  merchPreferences: [
+    ["comic", "📖 漫画"], ["stickers", "😆 表情包"], ["animation", "🎬 动画短片"], ["wallpaper", "🖼️ 壁纸"],
+    ["pendant", "🔑 挂件"], ["clothing", "👕 服饰"], ["acrylic", "🪧 亚克力立牌"], ["plush", "🧸 毛绒玩偶"],
+    ["figure", "🗿 小模型 / 手办"], ["other", "✍️ 其他"]
+  ],
   primaryFocus: [
     ["courses", "🎓 课程、讲座与知识分享（学术浓度在线）", "探索"], ["research", "🔬 学术研究、实验与实验招募（推开实验室的门）", "探索"],
     ["training", "🧭 人才培养、专业发展与就业去向（未来导航加载中）", "探索"], ["service", "💚 心理服务与心理健康信息（求助不再像寻宝）", "陪伴"],
@@ -69,31 +74,31 @@ const optionSets = {
     ["service_info", "🧭 求助信息不再像寻宝（心理服务信息更好找）", "心理服务信息更好找"], ["cross", "🤝 组队打破院系墙（跨学院合作活动）", "跨学院合作活动"]
   ],
   lifeCourses: [
-    ["debunk_mindread", "🔮 熟练回答“你猜猜我现在在想什么？”——并诚实回答：真猜不到"],
+    ["debunk_mindread", "🔮 面对“你猜猜我现在在想什么？”，熟练回答：“真猜不到。”"],
     ["evidence", "📊 看见任何现象，先在心里问一句：“样本量多大？统计量多大？显不显著？”"],
-    ["no_diagnose", "🩺 不随便给身边的人下诊断（避免非专业情境下随意贴标签）"], ["refuse_free", "🛑 礼貌拒绝朋友提出的免费心理咨询请求（明确朋友关系与专业服务的边界）"],
-    ["allow_emotion", "🌊 允许自己有情绪，也不把情绪硬塞进抽屉"], ["understand_self", "🔍 试着用学到的知识解构自己的行为、情绪和想法"],
-    ["deadline", "⏰ 与拖延、焦虑和截止日期保持复杂但稳定的关系"], ["pseudoscience", "🕵️ 识别伪心理学，并审慎看待“测完就贴标签”的网络测试（区分娱乐测试与规范心理测量）"],
+    ["no_diagnose", "🩺 不随便给身边的人下诊断（避免非专业情境下随意贴标签）"], ["refuse_free", "🛑 礼貌拒绝以朋友身份提供心理咨询，明确朋友关系与专业服务的边界"],
+    ["allow_emotion", "🌊 允许自己有情绪，不强迫自己快速消化"], ["understand_self", "🔍 试着用学到的知识解构自己的行为、情绪和想法"],
+    ["deadline", "⏰ 与拖延、焦虑和 DDL 保持复杂但稳定的关系"], ["pseudoscience", "🕵️ 识别伪心理学，并审慎看待“测完就贴标签”的网络测试（区分娱乐测试与规范心理测量）"],
     ["jargon", "🎭 突然冒出专业名词唬住一起讨论八卦的朋友们"]
   ],
   lifeUses: [
-    ["regulate", "🌤️ 以前情绪上头，现在理智能让我延迟发疯"], ["communicate", "🤝 人际沟通从鸡同鸭讲，进化到人类交流"],
+    ["regulate", "🌤️ 以前情绪上头，现在理智能让我延迟发疯"], ["communicate", "🤝 人际交往从“鸡同鸭讲”进化到“有效沟通”"],
     ["why_me", "🪞 终于知道自己为什么“又这样了”"], ["relationship", "🫶 谈恋爱少点猜谜，家庭群里不再宫斗"],
-    ["behavior_no_diagnosis", "🔍 看懂迷惑行为，忍住不隔空诊断（理解行为不等于能够作出临床诊断）"], ["habit_change", "🧭 坏习惯还在，只是现在犯得明明白白"],
+    ["behavior_no_diagnosis", "🔍 看懂迷惑行为，忍住不隔空诊断，理解行为不等于能够作出临床诊断"], ["habit_change", "🧭 坏习惯还在，只是现在犯得明明白白"],
     ["everywhere", "🌈 哪哪都用上了，润物细无声"], ["no_change", "📚 知识进入了脑子，生活暂时没有变化"]
   ],
   experimentYes: [
     ["curious_result", "🐱 好奇心得到满足，甚至有点想知道实验结果"], ["game", "🎮 像在完成小游戏，只是每一次点击都可能成为数据"],
     ["rigorous", "🔬 比想象中严谨，对心理学的科学性有了新的认识"], ["normal", "😇 全程努力“表现正常”，后来又怀疑：这份努力会不会也算一种反应"],
-    ["hidden_goal", "🕶️ 做完依旧猜不到实验目的，神秘感保持到了最后"], ["compensation", "💰 既对科学好奇，也不拒绝一份合理的参与者补偿"],
+    ["hidden_goal", "🕶️ 做完依旧猜不到实验目的，神秘感保持到了最后"], ["compensation", "💰 既对科学好奇，也不拒绝一份合理的参与报酬"],
     ["reflect", "🤔 结束后短暂思考：刚才那些反应，到底说明了什么"], ["calm", "🌊 体验比较平静，没有发生预想中的“被看穿”"],
     ["mismatch", "⚠️ 流程、耗时或体验与预期不太一致"]
   ],
   experimentNo: [
     ["closed", "🏃 每次看到招募信息时，报名已经结束了"], ["no_link", "🧭 报名入口与我之间似乎还缺一点缘分"],
-    ["busy", "📚 时间已经被课程、作业和截止日期征用"], ["learn_first", "❓ 对实验流程了解不多，想先看明白再决定"],
+    ["busy", "📚 课程、作业和 DDL 已经把日程塞满"], ["learn_first", "❓ 对实验流程了解不多，想先看明白再决定"],
     ["privacy", "🔐 对个人信息和隐私问题略有保留"], ["discomfort", "🌧️ 担心实验过程带来不适或压力"],
-    ["science_busy", "⏳ 科学很有趣，但空闲时间确实有限"], ["science_pay", "💰 对科学有热情，也会认真看看补偿是否合适"],
+    ["science_busy", "🗓️ 有兴趣，但招募时段总和我的空闲时间对不上"], ["science_pay", "💰 对科学有热情，也会认真看看参与报酬是否合适"],
     ["no_interest", "💤 目前对参加心理学实验兴趣不大"]
   ]
 };
@@ -102,13 +107,13 @@ function steps() {
   const list = ["basic", "recommendation"];
   if (Number(state.recommendation) >= 4) list.push("recommendedCourse");
   list.push("reasons", "misconception", "mascotKnown");
-  if (state.mascotKnown === "yes") list.push("mascotMatch", "merch");
+  if (state.mascotKnown === "yes") list.push("mascotMatch", "merch", "merchPreferences");
   return [...list, "presence", "primaryFocus", "future", "lifeCourses", "lifeUses", "experimentJoined", "experimentReasons", "keywords", "private"];
 }
 
 const sections = {
   basic: "关于你", recommendation: "课程印象", recommendedCourse: "课程印象", reasons: "课程印象",
-  misconception: "印象拼图", mascotKnown: "印象拼图", mascotMatch: "印象拼图", merch: "印象拼图",
+  misconception: "印象拼图", mascotKnown: "印象拼图", mascotMatch: "印象拼图", merch: "印象拼图", merchPreferences: "印象拼图",
   presence: "校园观察", primaryFocus: "校园观察", future: "校园观察",
   lifeCourses: "心理学与生活", lifeUses: "心理学与生活", experimentJoined: "实验经历", experimentReasons: "实验经历",
   keywords: "三个词", private: "最后一句"
@@ -182,6 +187,16 @@ function renderMascotMatch() {
 
 function renderMerch() {
   return questionFrame("Q3.4", "你目前有几件印有吉祥物的心院周边？", "请选择最接近的一项。", optionHtml("merchCount", optionSets.merch));
+}
+
+function renderMerchPreferences() {
+  const showOther = (state.merchPreferences ?? []).includes("other");
+  return questionFrame("Q3.5", "如果心院继续开发吉祥物内容或周边，你最希望看到哪些形式？", "可多选，最多选择 3 项。", `
+    ${optionHtml("merchPreferences", optionSets.merchPreferences, { multi: true })}
+    <div id="merchOtherWrap" ${showOther ? "" : "hidden"}>
+      <label class="field-label" for="merchPreferenceOther">其他形式</label>
+      <input id="merchPreferenceOther" class="text-input" data-field="merchPreferenceOther" maxlength="60" value="${escapeHtml(state.merchPreferenceOther)}" placeholder="写下你期待的周边形式">
+    </div>`);
 }
 
 function scaleHtml(name, value, low, high) {
@@ -271,7 +286,7 @@ function renderPrivate() {
 
 const renderers = {
   basic: renderBasic, recommendation: renderRecommendation, recommendedCourse: renderRecommendedCourse, reasons: renderReasons,
-  misconception: renderMisconception, mascotKnown: renderMascotKnown, mascotMatch: renderMascotMatch, merch: renderMerch,
+  misconception: renderMisconception, mascotKnown: renderMascotKnown, mascotMatch: renderMascotMatch, merch: renderMerch, merchPreferences: renderMerchPreferences,
   presence: renderPresence, primaryFocus: renderPrimaryFocus, future: renderFuture,
   lifeCourses: renderLifeCourses, lifeUses: renderLifeUses, experimentJoined: renderExperimentJoined,
   experimentReasons: renderExperimentReasons, keywords: renderKeywords, private: renderPrivate
@@ -297,19 +312,31 @@ function bindInputs() {
     if (input.name === "mascotKnown" && previous !== input.value && input.value === "no") {
       delete state.mascotMatch;
       delete state.merchCount;
+      delete state.merchPreferences;
+      delete state.merchPreferenceOther;
     }
     if (input.name === "experimentJoined" && previous !== input.value) state.experimentReasons = [];
     validation.textContent = "";
   }));
   mount.querySelectorAll('input[type="checkbox"]:not([data-field])').forEach((input) => input.addEventListener("change", () => {
     const name = input.name;
-    const max = name === "reasons" ? 3 : Infinity;
+    const max = name === "reasons" || name === "merchPreferences" ? 3 : Infinity;
     const normalized = [...mount.querySelectorAll(`input[name="${name}"]:checked`)].map((item) => item.value);
     if (normalized.length > max) {
       input.checked = false;
       validation.textContent = `最多选择 ${max} 项。`;
     } else {
       state[name] = normalized;
+      if (name === "merchPreferences") {
+        const otherSelected = normalized.includes("other");
+        const otherWrap = $("#merchOtherWrap", mount);
+        if (otherWrap) otherWrap.hidden = !otherSelected;
+        if (!otherSelected) {
+          delete state.merchPreferenceOther;
+          const otherInput = $("#merchPreferenceOther", mount);
+          if (otherInput) otherInput.value = "";
+        }
+      }
       validation.textContent = "";
     }
   }));
@@ -347,6 +374,9 @@ function validateStep() {
     mascotKnown: () => state.mascotKnown ? "" : "请选择是否认识吉祥物。",
     mascotMatch: () => state.mascotMatch ? "" : "请选择是否能对上名字和颜色。",
     merch: () => state.merchCount ? "" : "请选择周边数量。",
+    merchPreferences: () => !requiredMulti("merchPreferences")
+      ? "请至少选择一种期待的周边形式。"
+      : (state.merchPreferences.includes("other") && !state.merchPreferenceOther?.trim() ? "请填写其他周边形式。" : ""),
     presence: () => state.presenceRating ? "" : "请给校园存在感打分。",
     primaryFocus: () => state.primaryFocus ? "" : "请选择一个最想先看的方面。",
     future: () => requiredMulti("futureVisibility") ? "" : "请至少选择一个未来期待。",
@@ -384,7 +414,7 @@ function back() {
 }
 
 function portraitSvg(type, code) {
-  return `<img src="/personas/${code}.webp" alt="${type.nickname}人物画像" width="720" height="1200">`;
+  return `<img src="/personas/${code}.png" alt="${type.nickname}人物画像" width="720" height="1200">`;
   /* Legacy SVG remains below as a no-network fallback reference; production uses the reviewed portrait assets. */
   const [a, b, c] = type.palette;
   const dark = "#302A49";
@@ -545,7 +575,7 @@ function renderResult(result) {
   const template = $("#resultTemplate").content.cloneNode(true);
   screens.result.style.setProperty("--type-a", result.archetype.palette[0]);
   screens.result.style.setProperty("--type-b", result.archetype.palette[1]);
-  $("#resultCode", template).textContent = result.code;
+  $("#resultCode", template).textContent = `${result.code} · ${result.archetype.short}`;
   $("#confidenceBadge", template).textContent = result.confidence;
   $("#portraitMount", template).innerHTML = portraitSvg(result.archetype, result.code);
   $("#resultName", template).textContent = result.archetype.nickname;
@@ -586,7 +616,7 @@ function renderResult(result) {
     }
   });
   $("#copyResult").addEventListener("click", async (event) => {
-    const text = `我的心院人格是「${result.archetype.nickname}」（${result.archetype.short}）\n好感度 ${result.affinity}，存在感 ${result.presence}，更偏向${result.orientationLabel}。\nCP 感 ${result.cp}：${result.cpTitle}。\n${result.archetype.tagline}`;
+    const text = `我的心院印象是「${result.archetype.nickname}」（${result.archetype.short}）\n好感度 ${result.affinity}，存在感 ${result.presence}，更偏向${result.orientationLabel}。\nCP 感 ${result.cp}：${result.cpTitle}。\n${result.archetype.tagline}`;
     try {
       await navigator.clipboard.writeText(text);
       event.currentTarget.textContent = "已复制 ✓";

@@ -72,7 +72,7 @@ try {
   const fullAnswers = {
     college: "心理与认知科学学院", grade: "大二", identity: "major", courseTaken: "yes",
     recommendation: "5", recommendedCourse: "普通心理学", reasons: ["teacher", "science"], misconception: "brain",
-    mascotKnown: "yes", mascotMatch: "yes", merchCount: "1-5", presenceRating: "4", primaryFocus: "research",
+    mascotKnown: "yes", mascotMatch: "yes", merchCount: "1-5", merchPreferences: ["plush", "acrylic", "other"], merchPreferenceOther: "帆布包", presenceRating: "4", primaryFocus: "research",
     futureVisibility: ["openlab", "workshop"], lifeCourses: ["evidence", "allow_emotion"], lifeUses: ["why_me", "communicate"],
     experimentJoined: "yes", experimentReasons: ["rigorous", "curious_result"], keywords: ["心情", "脑科学", "社交"],
     publicCloudConsent: true, privateText: "希望心院多办一些开放活动"
@@ -88,6 +88,8 @@ try {
   const saved = JSON.parse(await readFile(dataFile, "utf8"));
   assert.equal(saved.responses.length, 1);
   assert.equal(saved.responses[0].answers.privateText, undefined);
+  assert.deepEqual(saved.responses[0].answers.merchPreferences, ["plush", "acrylic", "other"]);
+  assert.equal(saved.responses[0].answers.merchPreferenceOther, "帆布包");
   assert.equal(saved.responses[0].message_to_xinyuan, "希望心院多办一些开放活动");
 
   const unauthorized = await fetch(`${baseUrl}/api/v1/stats/overview`);
