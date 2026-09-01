@@ -115,7 +115,8 @@ function addWordsToStore(store, normalized) {
 
 function envConfig(env) {
   return {
-    supabaseUrl: String(env.SUPABASE_URL ?? "").replace(/\/$/, ""), supabaseKey: String(env.SUPABASE_SERVICE_ROLE_KEY ?? ""),
+    supabaseUrl: String(env.SUPABASE_URL ?? "").replace(/\/$/, ""),
+    supabaseKey: String(env.SUPABASE_SECRET_KEY ?? env.SUPABASE_SERVICE_ROLE_KEY ?? ""),
     adminToken: String(env.ADMIN_TOKEN ?? ""), openaiKey: String(env.OPENAI_API_KEY ?? ""), openaiModel: String(env.OPENAI_MODEL ?? ""),
     publicCloudMinCount: Math.max(1, Math.min(20, Number(env.PUBLIC_CLOUD_MIN_COUNT) || 1))
   };
@@ -124,9 +125,13 @@ function envConfig(env) {
 function hasSupabase(config) { return Boolean(config.supabaseUrl && config.supabaseKey); }
 
 async function supabaseRequest(config, fetchImpl, path, options = {}) {
+  const authHeaders = { apikey: config.supabaseKey };
+  // New Supabase secret keys are opaque and authenticate through `apikey`.
+  // Legacy service_role JWTs also support the Authorization header.
+  if (!config.supabaseKey.startsWith("sb_secret_")) authHeaders.authorization = `Bearer ${config.supabaseKey}`;
   const response = await fetchImpl(`${config.supabaseUrl}/rest/v1/${path}`, {
     ...options,
-    headers: { apikey: config.supabaseKey, authorization: `Bearer ${config.supabaseKey}`, "content-type": "application/json", ...(options.headers ?? {}) }
+    headers: { ...authHeaders, "content-type": "application/json", ...(options.headers ?? {}) }
   });
   const raw = await response.text();
   if (!response.ok) throw new Error(`supabase_${response.status}:${raw.slice(0, 300)}`);

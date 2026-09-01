@@ -133,7 +133,8 @@ try {
   const supabaseRows = [];
   const mockSupabaseFetch = async (url, options) => {
     assert.match(url, /^https:\/\/example\.supabase\.co\/rest\/v1\/survey_responses/);
-    assert.equal(options.headers.apikey, "test-service-key");
+    assert.equal(options.headers.apikey, "sb_secret_test-key");
+    assert.equal(options.headers.authorization, undefined);
     if (options.method === "POST") {
       const record = JSON.parse(options.body);
       assert.equal(record.answers.privateText, undefined);
@@ -145,7 +146,7 @@ try {
   };
   const supabaseServer = createAppServer({
     dataFile,
-    env: { ADMIN_TOKEN: "test-secret", SUPABASE_URL: "https://example.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "test-service-key" },
+    env: { ADMIN_TOKEN: "test-secret", SUPABASE_URL: "https://example.supabase.co", SUPABASE_SECRET_KEY: "sb_secret_test-key" },
     fetchImpl: mockSupabaseFetch
   });
   await new Promise((resolve) => supabaseServer.listen(0, "127.0.0.1", resolve));

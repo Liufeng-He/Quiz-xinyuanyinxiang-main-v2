@@ -32,7 +32,7 @@ npm test
 
 ```text
 SUPABASE_URL=https://你的项目.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=仅限服务端的密钥
+SUPABASE_SECRET_KEY=仅限服务端的 sb_secret_... 密钥
 ADMIN_TOKEN=一段至少32字符的随机密码
 PUBLIC_CLOUD_MIN_COUNT=2
 ```
@@ -40,7 +40,7 @@ PUBLIC_CLOUD_MIN_COUNT=2
 4. 保存后让 Render 重新部署。
 5. 打开 `https://你的网站/api/v1/health`，确认返回的 `storage` 是 `supabase`。
 
-`SUPABASE_SERVICE_ROLE_KEY` 和 `ADMIN_TOKEN` 只能放在 Render Environment，不能写入前端或提交 GitHub。数据库启用了 RLS，未创建浏览器端读写策略。
+`SUPABASE_SECRET_KEY` 和 `ADMIN_TOKEN` 只能放在 Render Environment，不能写入前端或提交 GitHub。后端仍兼容旧项目的 `SUPABASE_SERVICE_ROLE_KEY`。数据库启用了 RLS，未创建浏览器端读写策略。
 
 ## 统计接口
 
