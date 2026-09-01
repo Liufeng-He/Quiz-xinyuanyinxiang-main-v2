@@ -67,13 +67,13 @@ Invoke-RestMethod "https://你的网站/api/v1/stats/overview" -Headers $headers
 Invoke-WebRequest "https://你的网站/api/v1/stats/export.csv" -Headers $headers -OutFile "心院答卷.csv"
 ```
 
-## 可选 AI 报告
+## 可选 DeepSeek AI 报告
 
 在 Render Environment 继续添加：
 
 ```text
-OPENAI_API_KEY=你的服务端API密钥
-OPENAI_MODEL=你的OpenAI项目可用模型ID
+DEEPSEEK_API_KEY=你的DeepSeek服务端API密钥
+DEEPSEEK_MODEL=deepseek-v4-flash
 ```
 
 然后调用：
@@ -83,7 +83,7 @@ $headers = @{ Authorization = "Bearer 你的ADMIN_TOKEN" }
 Invoke-RestMethod "https://你的网站/api/v1/admin/ai-report" -Method Post -Headers $headers
 ```
 
-AI 只收到 `stats/overview` 产生的匿名聚合统计，不接收单份答卷或“想对心院说的话”。请求使用 OpenAI Responses API 的 JSON Schema 结构化输出，并设置 `store: false`。
+AI 只收到 `stats/overview` 产生的匿名聚合统计，不接收单份答卷或“想对心院说的话”。请求使用 DeepSeek Chat Completions API 的 JSON Output；服务端会再次校验报告字段和类型。
 
 ## Render 发布
 

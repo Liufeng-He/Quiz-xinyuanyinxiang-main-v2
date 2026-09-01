@@ -117,7 +117,7 @@ function envConfig(env) {
   return {
     supabaseUrl: String(env.SUPABASE_URL ?? "").replace(/\/$/, ""),
     supabaseKey: String(env.SUPABASE_SECRET_KEY ?? env.SUPABASE_SERVICE_ROLE_KEY ?? ""),
-    adminToken: String(env.ADMIN_TOKEN ?? ""), openaiKey: String(env.OPENAI_API_KEY ?? ""), openaiModel: String(env.OPENAI_MODEL ?? ""),
+    adminToken: String(env.ADMIN_TOKEN ?? ""), deepseekKey: String(env.DEEPSEEK_API_KEY ?? ""), deepseekModel: String(env.DEEPSEEK_MODEL ?? ""),
     publicCloudMinCount: Math.max(1, Math.min(20, Number(env.PUBLIC_CLOUD_MIN_COUNT) || 1))
   };
 }
@@ -211,35 +211,27 @@ function rowsToCsv(rows) {
   return `\uFEFF${[headers.join(","), ...rows.map((row) => headers.map((field) => csvEscape(field === "answers_json" ? row.answers : row[field])).join(","))].join("\r\n")}`;
 }
 
-function extractResponseText(payload) {
-  if (typeof payload?.output_text === "string") return payload.output_text;
-  for (const item of payload?.output ?? []) for (const content of item?.content ?? []) if (content?.type === "output_text" && typeof content.text === "string") return content.text;
-  return "";
-}
-
 async function createAiReport(config, fetchImpl, statistics) {
-  if (!config.openaiKey || !config.openaiModel) throw new Error("openai_not_configured");
-  const schema = {
-    type: "object", additionalProperties: false,
-    properties: {
-      summary: { type: "string" }, findings: { type: "array", items: { type: "string" } },
-      dimensionInterpretation: { type: "array", items: { type: "string" } }, recommendations: { type: "array", items: { type: "string" } },
-      caveats: { type: "array", items: { type: "string" } }
-    }, required: ["summary", "findings", "dimensionInterpretation", "recommendations", "caveats"]
-  };
-  const response = await fetchImpl("https://api.openai.com/v1/responses", {
-    method: "POST", headers: { authorization: `Bearer ${config.openaiKey}`, "content-type": "application/json" },
+  if (!config.deepseekKey || !config.deepseekModel) throw new Error("deepseek_not_configured");
+  const example = { summary: "总体概述", findings: ["主要发现"], dimensionInterpretation: ["维度解读"], recommendations: ["行动建议"], caveats: ["样本限制"] };
+  const response = await fetchImpl("https://api.deepseek.com/chat/completions", {
+    method: "POST", headers: { authorization: `Bearer ${config.deepseekKey}`, "content-type": "application/json" },
     body: JSON.stringify({
-      model: config.openaiModel, store: false, reasoning: { effort: "low" },
-      instructions: "你是校园问卷统计分析助手。只分析所给匿名聚合数据，不推断个人身份，不虚构因果关系。用简洁中文区分事实、解释与建议，并明确样本量限制。",
-      input: JSON.stringify(statistics), text: { format: { type: "json_schema", name: "xinyuan_survey_report", strict: true, schema } }
+      model: config.deepseekModel, stream: false, max_tokens: 2000, response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: `你是校园问卷统计分析助手。只分析所给匿名聚合数据，不推断个人身份，不虚构因果关系。用简洁中文区分事实、解释与建议，并明确样本量限制。必须只输出合法 JSON，字段和类型严格参照此示例：${JSON.stringify(example)}` },
+        { role: "user", content: `请分析以下匿名聚合统计并输出 JSON：${JSON.stringify(statistics)}` }
+      ]
     })
   });
   const payload = await response.json();
-  if (!response.ok) throw new Error(`openai_${response.status}:${JSON.stringify(payload).slice(0, 300)}`);
-  const output = extractResponseText(payload);
-  if (!output) throw new Error("openai_empty_output");
-  return JSON.parse(output);
+  if (!response.ok) throw new Error(`deepseek_${response.status}:${JSON.stringify(payload).slice(0, 300)}`);
+  const output = payload?.choices?.[0]?.message?.content;
+  if (typeof output !== "string" || !output.trim()) throw new Error("deepseek_empty_output");
+  const report = JSON.parse(output);
+  const arrayFields = ["findings", "dimensionInterpretation", "recommendations", "caveats"];
+  if (!report || typeof report !== "object" || Array.isArray(report) || typeof report.summary !== "string" || arrayFields.some((field) => !Array.isArray(report[field]) || report[field].some((item) => typeof item !== "string"))) throw new Error("deepseek_invalid_output");
+  return { summary: report.summary, ...Object.fromEntries(arrayFields.map((field) => [field, report[field]])) };
 }
 
 function buildRecord(answers) {
@@ -268,7 +260,7 @@ export function createAppServer({ dataFile = DEFAULT_DATA_FILE, env = process.en
   return createHttpServer(async (req, res) => {
     try {
       const url = new URL(req.url, "http://localhost");
-      if (req.method === "GET" && url.pathname === "/api/v1/health") return json(res, 200, { ok: true, storage: hasSupabase(config) ? "supabase" : "local", ai: Boolean(config.openaiKey && config.openaiModel) });
+      if (req.method === "GET" && url.pathname === "/api/v1/health") return json(res, 200, { ok: true, storage: hasSupabase(config) ? "supabase" : "local", ai: Boolean(config.deepseekKey && config.deepseekModel) });
 
       if (req.method === "POST" && url.pathname === "/api/v1/responses") {
         const ip = String(req.headers["x-forwarded-for"] ?? req.socket.remoteAddress ?? "unknown").split(",")[0].trim();
@@ -315,7 +307,7 @@ export function createAppServer({ dataFile = DEFAULT_DATA_FILE, env = process.en
       if (req.method === "GET" && url.pathname === "/api/v1/stats/overview") return json(res, 200, buildStatistics(await listRecords()));
       if (req.method === "GET" && url.pathname === "/api/v1/stats/export.csv") return text(res, 200, rowsToCsv(await listRecords()), "text/csv; charset=utf-8");
       if (req.method === "POST" && url.pathname === "/api/v1/admin/ai-report") {
-        if (!config.openaiKey || !config.openaiModel) return json(res, 503, { error: "OPENAI_API_KEY 或 OPENAI_MODEL 尚未配置" });
+        if (!config.deepseekKey || !config.deepseekModel) return json(res, 503, { error: "DEEPSEEK_API_KEY 或 DEEPSEEK_MODEL 尚未配置" });
         const statistics = buildStatistics(await listRecords());
         return json(res, 200, { generatedAt: new Date().toISOString(), report: await createAiReport(config, fetchImpl, statistics) });
       }

@@ -110,19 +110,22 @@ try {
   assert.equal(aiWithoutKey.status, 503);
 
   const expectedReport = { summary: "样本摘要", findings: ["发现"], dimensionInterpretation: ["维度"], recommendations: ["建议"], caveats: ["样本量有限"] };
-  const mockOpenAiFetch = async (url, options) => {
-    assert.equal(url, "https://api.openai.com/v1/responses");
-    assert.equal(options.headers.authorization, "Bearer test-openai-key");
+  const mockDeepSeekFetch = async (url, options) => {
+    assert.equal(url, "https://api.deepseek.com/chat/completions");
+    assert.equal(options.headers.authorization, "Bearer test-deepseek-key");
     const request = JSON.parse(options.body);
-    assert.equal(request.store, false);
-    assert.equal(request.text.format.type, "json_schema");
-    assert.doesNotMatch(request.input, /希望心院多办一些开放活动/);
-    return { ok: true, status: 200, json: async () => ({ output: [{ content: [{ type: "output_text", text: JSON.stringify(expectedReport) }] }] }) };
+    assert.equal(request.model, "deepseek-v4-flash");
+    assert.equal(request.response_format.type, "json_object");
+    assert.match(request.messages[0].content, /JSON/);
+    assert.doesNotMatch(JSON.stringify(request.messages), /希望心院多办一些开放活动/);
+    return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify(expectedReport) } }] }) };
   };
-  const aiServer = createAppServer({ dataFile, env: { ADMIN_TOKEN: "test-secret", OPENAI_API_KEY: "test-openai-key", OPENAI_MODEL: "test-model" }, fetchImpl: mockOpenAiFetch });
+  const aiServer = createAppServer({ dataFile, env: { ADMIN_TOKEN: "test-secret", DEEPSEEK_API_KEY: "test-deepseek-key", DEEPSEEK_MODEL: "deepseek-v4-flash" }, fetchImpl: mockDeepSeekFetch });
   await new Promise((resolve) => aiServer.listen(0, "127.0.0.1", resolve));
   try {
     const aiPort = aiServer.address().port;
+    const aiHealth = await fetch(`http://127.0.0.1:${aiPort}/api/v1/health`);
+    assert.equal((await aiHealth.json()).ai, true);
     const ai = await fetch(`http://127.0.0.1:${aiPort}/api/v1/admin/ai-report`, { method: "POST", headers: { authorization: "Bearer test-secret" } });
     assert.equal(ai.status, 200);
     assert.deepEqual((await ai.json()).report, expectedReport);

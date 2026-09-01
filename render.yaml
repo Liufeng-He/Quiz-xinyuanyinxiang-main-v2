@@ -15,7 +15,7 @@ services:
         sync: false
       - key: PUBLIC_CLOUD_MIN_COUNT
         value: "2"
-      - key: OPENAI_API_KEY
+      - key: DEEPSEEK_API_KEY
         sync: false
-      - key: OPENAI_MODEL
-        sync: false
+      - key: DEEPSEEK_MODEL
+        value: "deepseek-v4-flash"
