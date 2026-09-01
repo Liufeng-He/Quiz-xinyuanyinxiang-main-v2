@@ -1070,4 +1070,84 @@ body::before, .ambient { display: none; }
 .cp-card .inner-tags {
   margin-top: 0;
 }
+/* Print/PDF output */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+@media print {
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html,
+  body {
+    width: auto !important;
+    min-height: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .topbar,
+  .result-actions,
+  .cloud-card {
+    display: none !important;
+  }
+
+  .app-shell {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .result-hero,
+  .result-card {
+    break-inside: avoid-page !important;
+    page-break-inside: avoid !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .result-card {
+    overflow: visible !important;
+  }
+
+  .portrait-mount {
+    box-shadow: none !important;
+  }
+
+  .axis-item {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .axis-track {
+    display: block !important;
+    height: 10px !important;
+    overflow: hidden !important;
+    border: 1px solid #29253a !important;
+    border-radius: 2px !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+  }
+
+  .axis-track i {
+    display: block !important;
+    height: 100% !important;
+    border-top: 8px solid #5b4b8a !important;
+    border-radius: 0 !important;
+    background: #5b4b8a !important;
+    box-shadow: none !important;
+  }
+
+  .evidence-row span,
+  .inner-tags span {
+    border: 1px solid #8f8678 !important;
+    background: #f1ecdf !important;
+  }
+}
 }
