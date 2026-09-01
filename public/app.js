@@ -623,7 +623,64 @@ function renderResult(result) {
       window.prompt("复制下面的结果文案：", text);
     }
   });
-  $("#printResult").addEventListener("click", () => window.print());
+$("#printResult").addEventListener("click", async (event) => {
+  const button = event.currentTarget;
+  const originalText = button.textContent;
+  button.disabled = true;
+  button.textContent = "正在生成长图…";
+
+  try {
+    if (typeof window.html2canvas !== "function") {
+      throw new Error("image_renderer_unavailable");
+    }
+
+    await document.fonts?.ready;
+
+    const canvas = await window.html2canvas($("#resultMount"), {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#f4f0e7",
+      logging: false,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      onclone: (documentClone) => {
+        documentClone.querySelector(".result-actions")?.remove();
+        documentClone.querySelector(".cloud-card")?.remove();
+      }
+    });
+
+    const blob = await new Promise((resolve) => {
+      canvas.toBlob(resolve, "image/png", 1);
+    });
+
+    if (!blob) {
+      throw new Error("image_export_failed");
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "心院印象-结果长图.png";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    window.setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
+
+    button.textContent = "长图已保存 ✓";
+  } catch {
+    button.textContent = "生成失败，请重试";
+  } finally {
+    button.disabled = false;
+
+    window.setTimeout(() => {
+      button.textContent = originalText;
+    }, 1800);
+  }
+});
   $("#restartQuiz").addEventListener("click", () => {
     for (const key of Object.keys(state)) delete state[key];
     history = [];
