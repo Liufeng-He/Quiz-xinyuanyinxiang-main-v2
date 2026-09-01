@@ -1038,4 +1038,36 @@ body::before, .ambient { display: none; }
   .word-cloud::before { inset: 8% 3% 7%; }
   .word-cloud .cloud-word { left: var(--cloud-mobile-left) !important; top: var(--cloud-mobile-top) !important; font-size: var(--cloud-mobile-size) !important; }
   .word-cloud .cloud-word:nth-of-type(n+25) { display: none; }
+/* 结果标签说明 */
+.evidence-profile {
+  margin-top: 22px;
+}
+
+.objective-card .evidence-label {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.evidence-profile .evidence-row {
+  margin-top: 0;
+}
+
+.cp-card .inner-profile {
+  grid-column: 1 / -1;
+}
+
+.cp-card .inner-tags-label {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.cp-card .inner-tags {
+  margin-top: 0;
+}
 }
