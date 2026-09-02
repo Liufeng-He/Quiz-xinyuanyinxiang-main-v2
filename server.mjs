@@ -32,6 +32,13 @@ const ANSWER_FIELDS = {
   lifeUses: "array", experimentJoined: "string", experimentReasons: "array", keywords: "array", publicCloudConsent: "boolean", privateText: "string"
 };
 
+const RESPONSE_SELECT = [
+  "id", "created_at", "college", "grade", "identity", "course_taken", "recommendation", "recommended_course", "reasons",
+  "misconception", "mascot_known", "mascot_match", "merch_count", "merch_preferences", "merch_preference_other",
+  "presence_rating", "primary_focus", "future_visibility", "life_courses", "life_uses", "experiment_joined", "experiment_reasons",
+  "answers", "result_code", "affinity", "presence", "orientation", "cp_score", "keywords", "public_cloud_consent", "message_to_xinyuan"
+].join(",");
+
 export function normalizeKeyword(input) {
   const cleaned = String(input ?? "").normalize("NFKC").trim().replace(/[\s\p{P}\p{S}]+/gu, "").slice(0, 16);
   if (!cleaned) return null;
@@ -55,6 +62,11 @@ function validateAnswers(answers) {
   if (required.some((field) => !answers[field])) return "答卷字段不完整";
   if (!Number.isInteger(Number(answers.recommendation)) || Number(answers.recommendation) < 1 || Number(answers.recommendation) > 5) return "推荐程度无效";
   if (!Number.isInteger(Number(answers.presenceRating)) || Number(answers.presenceRating) < 1 || Number(answers.presenceRating) > 5) return "存在感评分无效";
+  if (Number(answers.recommendation) >= 4 && !answers.recommendedCourse) return "请填写推荐课程";
+  if (!answers.reasons.length) return "请至少选择一个课程推荐原因";
+  if (answers.mascotKnown === "yes" && (!answers.mascotMatch || !answers.merchCount || !answers.merchPreferences.length)) return "吉祥物相关答卷字段不完整";
+  if (answers.merchPreferences.includes("other") && !answers.merchPreferenceOther) return "请填写其他周边形式";
+  if (!answers.futureVisibility.length || !answers.lifeCourses.length || !answers.lifeUses.length || !answers.experimentReasons.length) return "答卷多选题不完整";
   if (answers.keywords.length !== 3 || answers.keywords.some((word) => !word)) return "请填写三个关键词";
   return "";
 }
@@ -144,10 +156,9 @@ async function insertSupabaseRecord(config, fetchImpl, record) {
 }
 
 async function listSupabaseRecords(config, fetchImpl) {
-  const select = "id,created_at,college,grade,identity,answers,result_code,affinity,presence,orientation,cp_score,keywords,public_cloud_consent,message_to_xinyuan";
   const records = [];
   for (let offset = 0; offset < 50_000; offset += 1000) {
-    const page = await supabaseRequest(config, fetchImpl, `survey_responses?select=${select}&order=created_at.desc&limit=1000&offset=${offset}`) ?? [];
+    const page = await supabaseRequest(config, fetchImpl, `survey_responses?select=${RESPONSE_SELECT}&order=created_at.desc&limit=1000&offset=${offset}`) ?? [];
     records.push(...page);
     if (page.length < 1000) break;
   }
@@ -175,6 +186,19 @@ function countBy(rows, getValue) {
   return Object.fromEntries(Object.entries(counts).sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0]), "zh-CN")));
 }
 
+function countSelections(rows, getValues) {
+  const counts = {};
+  for (const row of rows) {
+    const uniqueValues = new Set(Array.isArray(getValues(row)) ? getValues(row).filter(Boolean) : []);
+    for (const value of uniqueValues) counts[value] = (counts[value] ?? 0) + 1;
+  }
+  return Object.fromEntries(Object.entries(counts).sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0]), "zh-CN")));
+}
+
+function answerValue(row, camelName, columnName) {
+  return row[columnName] ?? row.answers?.[camelName];
+}
+
 function average(rows, field) {
   const values = rows.map((row) => Number(row[field])).filter(Number.isFinite);
   return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 10) / 10 : 0;
@@ -187,7 +211,39 @@ export function buildStatistics(rows) {
     personas: countBy(rows, (row) => row.result_code), colleges: countBy(rows, (row) => row.college), grades: countBy(rows, (row) => row.grade),
     identities: countBy(rows, (row) => row.identity), recommendation: countBy(rows, (row) => row.answers?.recommendation),
     misconceptions: countBy(rows, (row) => row.answers?.misconception), primaryFocus: countBy(rows, (row) => row.answers?.primaryFocus),
-    experiments: countBy(rows, (row) => row.answers?.experimentJoined)
+    experiments: countBy(rows, (row) => row.answers?.experimentJoined),
+    questions: {
+      q1: {
+        college: countBy(rows, (row) => row.college), grade: countBy(rows, (row) => row.grade), identity: countBy(rows, (row) => row.identity),
+        courseTaken: countBy(rows, (row) => answerValue(row, "courseTaken", "course_taken"))
+      },
+      q2: {
+        recommendation: countBy(rows, (row) => answerValue(row, "recommendation", "recommendation")),
+        recommendedCourse: countBy(rows, (row) => answerValue(row, "recommendedCourse", "recommended_course")),
+        reasons: countSelections(rows, (row) => answerValue(row, "reasons", "reasons"))
+      },
+      q3: {
+        misconception: countBy(rows, (row) => answerValue(row, "misconception", "misconception")),
+        mascotKnown: countBy(rows, (row) => answerValue(row, "mascotKnown", "mascot_known")),
+        mascotMatch: countBy(rows, (row) => answerValue(row, "mascotMatch", "mascot_match")),
+        merchCount: countBy(rows, (row) => answerValue(row, "merchCount", "merch_count")),
+        merchPreferences: countSelections(rows, (row) => answerValue(row, "merchPreferences", "merch_preferences")),
+        merchPreferenceOther: countBy(rows, (row) => answerValue(row, "merchPreferenceOther", "merch_preference_other"))
+      },
+      q4: {
+        presenceRating: countBy(rows, (row) => answerValue(row, "presenceRating", "presence_rating")),
+        primaryFocus: countBy(rows, (row) => answerValue(row, "primaryFocus", "primary_focus")),
+        futureVisibility: countSelections(rows, (row) => answerValue(row, "futureVisibility", "future_visibility"))
+      },
+      q5: { lifeCourses: countSelections(rows, (row) => answerValue(row, "lifeCourses", "life_courses")) },
+      q6: { lifeUses: countSelections(rows, (row) => answerValue(row, "lifeUses", "life_uses")) },
+      q7: {
+        experimentJoined: countBy(rows, (row) => answerValue(row, "experimentJoined", "experiment_joined")),
+        experimentReasons: countSelections(rows, (row) => answerValue(row, "experimentReasons", "experiment_reasons"))
+      },
+      q8: { publicCloudConsent: countBy(rows, (row) => row.public_cloud_consent) },
+      q9: { messageResponseCount: rows.filter((row) => String(row.message_to_xinyuan ?? "").trim()).length }
+    }
   };
 }
 
@@ -207,8 +263,22 @@ function csvEscape(value) {
 }
 
 function rowsToCsv(rows) {
-  const headers = ["id", "created_at", "college", "grade", "identity", "result_code", "affinity", "presence", "orientation", "cp_score", "message_to_xinyuan", "answers_json"];
-  return `\uFEFF${[headers.join(","), ...rows.map((row) => headers.map((field) => csvEscape(field === "answers_json" ? row.answers : row[field])).join(","))].join("\r\n")}`;
+  const columns = [
+    ["id", (row) => row.id], ["created_at", (row) => row.created_at], ["college", (row) => row.college], ["grade", (row) => row.grade], ["identity", (row) => row.identity],
+    ["course_taken", (row) => answerValue(row, "courseTaken", "course_taken")], ["recommendation", (row) => answerValue(row, "recommendation", "recommendation")],
+    ["recommended_course", (row) => answerValue(row, "recommendedCourse", "recommended_course")], ["reasons", (row) => answerValue(row, "reasons", "reasons")],
+    ["misconception", (row) => answerValue(row, "misconception", "misconception")], ["mascot_known", (row) => answerValue(row, "mascotKnown", "mascot_known")],
+    ["mascot_match", (row) => answerValue(row, "mascotMatch", "mascot_match")], ["merch_count", (row) => answerValue(row, "merchCount", "merch_count")],
+    ["merch_preferences", (row) => answerValue(row, "merchPreferences", "merch_preferences")], ["merch_preference_other", (row) => answerValue(row, "merchPreferenceOther", "merch_preference_other")],
+    ["presence_rating", (row) => answerValue(row, "presenceRating", "presence_rating")], ["primary_focus", (row) => answerValue(row, "primaryFocus", "primary_focus")],
+    ["future_visibility", (row) => answerValue(row, "futureVisibility", "future_visibility")], ["life_courses", (row) => answerValue(row, "lifeCourses", "life_courses")],
+    ["life_uses", (row) => answerValue(row, "lifeUses", "life_uses")], ["experiment_joined", (row) => answerValue(row, "experimentJoined", "experiment_joined")],
+    ["experiment_reasons", (row) => answerValue(row, "experimentReasons", "experiment_reasons")], ["keywords", (row) => row.keywords],
+    ["public_cloud_consent", (row) => row.public_cloud_consent], ["message_to_xinyuan", (row) => row.message_to_xinyuan],
+    ["result_code", (row) => row.result_code], ["affinity", (row) => row.affinity], ["presence", (row) => row.presence], ["orientation", (row) => row.orientation],
+    ["cp_score", (row) => row.cp_score], ["answers_json", (row) => row.answers]
+  ];
+  return `\uFEFF${[columns.map(([header]) => header).join(","), ...rows.map((row) => columns.map(([, getValue]) => csvEscape(getValue(row))).join(","))].join("\r\n")}`;
 }
 
 async function createAiReport(config, fetchImpl, statistics) {
@@ -240,6 +310,12 @@ function buildRecord(answers) {
   const keywords = analysisAnswers.keywords.map(normalizeKeyword).filter(Boolean).slice(0, 3);
   return {
     id: randomUUID(), created_at: new Date().toISOString(), college: analysisAnswers.college, grade: analysisAnswers.grade, identity: analysisAnswers.identity, answers: analysisAnswers,
+    course_taken: analysisAnswers.courseTaken, recommendation: Number(analysisAnswers.recommendation), recommended_course: analysisAnswers.recommendedCourse || null,
+    reasons: analysisAnswers.reasons, misconception: analysisAnswers.misconception, mascot_known: analysisAnswers.mascotKnown,
+    mascot_match: analysisAnswers.mascotMatch || null, merch_count: analysisAnswers.merchCount || null,
+    merch_preferences: analysisAnswers.merchPreferences, merch_preference_other: analysisAnswers.merchPreferenceOther || null,
+    presence_rating: Number(analysisAnswers.presenceRating), primary_focus: analysisAnswers.primaryFocus, future_visibility: analysisAnswers.futureVisibility,
+    life_courses: analysisAnswers.lifeCourses, life_uses: analysisAnswers.lifeUses, experiment_joined: analysisAnswers.experimentJoined, experiment_reasons: analysisAnswers.experimentReasons,
     result_code: result.code, affinity: result.affinity, presence: result.presence, orientation: result.orientation, cp_score: result.cp,
     keywords: analysisAnswers.publicCloudConsent === false ? [] : keywords, public_cloud_consent: analysisAnswers.publicCloudConsent !== false,
     message_to_xinyuan: privateText
