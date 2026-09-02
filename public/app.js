@@ -6,6 +6,7 @@ const screens = {
 };
 const mount = $("#questionMount");
 const validation = $("#validationMessage");
+const ASSET_VERSION = "20260902-1";
 const state = {};
 let currentId = "basic";
 let history = [];
@@ -413,7 +414,7 @@ function back() {
 }
 
 function portraitSvg(type, code) {
-  return `<img src="/personas/${code}.png" alt="${type.nickname}人物画像" width="720" height="1200">`;
+  return `<img src="/personas/${code}.webp?v=${ASSET_VERSION}" alt="${type.nickname}人物画像" width="720" height="1199">`;
   /* Legacy SVG remains below as a no-network fallback reference; production uses the reviewed portrait assets. */
   const [a, b, c] = type.palette;
   const dark = "#302A49";
@@ -538,6 +539,38 @@ function layoutCloud(words, { width = 680, height = 390, mobile = false } = {}) 
 function shouldPreviewLongImage() {
   const userAgent = navigator.userAgent ?? "";
   return /MicroMessenger/i.test(userAgent) || /iPhone|iPad|iPod/i.test(userAgent);
+}
+
+async function waitForImage(image, timeoutMs = 20_000) {
+  if (!image.complete) {
+    await new Promise((resolve, reject) => {
+      const timer = window.setTimeout(() => reject(new Error("image_load_timeout")), timeoutMs);
+      image.addEventListener("load", () => {
+        window.clearTimeout(timer);
+        resolve();
+      }, { once: true });
+      image.addEventListener("error", () => {
+        window.clearTimeout(timer);
+        reject(new Error("image_load_failed"));
+      }, { once: true });
+    });
+  }
+  if (!image.naturalWidth || !image.naturalHeight) throw new Error("image_unavailable");
+  await image.decode?.().catch(() => {});
+}
+
+async function prepareCaptureImages(root) {
+  const images = [...root.querySelectorAll("img")];
+  await Promise.all(images.map((image) => waitForImage(image)));
+  return images.map((image) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("image_canvas_unavailable");
+    context.drawImage(image, 0, 0);
+    return canvas.toDataURL("image/png", 1);
+  });
 }
 
 function showLongImagePreview(imageUrl) {
@@ -682,8 +715,12 @@ $("#printResult").addEventListener("click", async (event) => {
     }
 
     await document.fonts?.ready;
+    button.textContent = "正在准备人物图…";
+    const resultMount = $("#resultMount");
+    const captureImages = await prepareCaptureImages(resultMount);
+    button.textContent = "正在生成长图…";
 
-    const canvas = await window.html2canvas($("#resultMount"), {
+    const canvas = await window.html2canvas(resultMount, {
       scale: 2,
       useCORS: true,
       backgroundColor: "#f4f0e7",
@@ -694,6 +731,9 @@ $("#printResult").addEventListener("click", async (event) => {
         documentClone.querySelector(".result-actions")?.remove();
         documentClone.querySelector(".cloud-card")?.remove();
         documentClone.querySelector(".private-card")?.remove();
+        [...documentClone.querySelectorAll("#resultMount img")].forEach((image, index) => {
+          if (captureImages[index]) image.src = captureImages[index];
+        });
       }
     });
 
