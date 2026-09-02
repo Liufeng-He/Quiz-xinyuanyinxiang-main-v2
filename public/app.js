@@ -535,6 +535,53 @@ function layoutCloud(words, { width = 680, height = 390, mobile = false } = {}) 
   return items.filter((item) => item.depth);
 }
 
+function shouldPreviewLongImage() {
+  const userAgent = navigator.userAgent ?? "";
+  return /MicroMessenger/i.test(userAgent) || /iPhone|iPad|iPod/i.test(userAgent);
+}
+
+function showLongImagePreview(imageUrl) {
+  document.querySelector("#longImagePreview")?.remove();
+
+  const previousOverflow = document.body.style.overflow;
+  const overlay = document.createElement("div");
+  overlay.id = "longImagePreview";
+  overlay.className = "long-image-preview";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", "结果长图预览");
+  overlay.innerHTML = `
+    <div class="long-image-preview__bar">
+      <div>
+        <strong>结果长图已生成</strong>
+        <span>请长按下方图片，选择“保存图片”</span>
+      </div>
+      <button type="button" aria-label="关闭长图预览">关闭</button>
+    </div>
+    <div class="long-image-preview__body">
+      <img src="${imageUrl}" alt="心院印象结果长图">
+    </div>`;
+
+  const closePreview = () => {
+    document.removeEventListener("keydown", closeOnEscape);
+    overlay.remove();
+    document.body.style.overflow = previousOverflow;
+  };
+
+  function closeOnEscape(event) {
+    if (event.key === "Escape") closePreview();
+  }
+
+  overlay.querySelector("button").addEventListener("click", closePreview);
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closePreview();
+  });
+  document.addEventListener("keydown", closeOnEscape);
+
+  document.body.style.overflow = "hidden";
+  document.body.appendChild(overlay);
+}
+
 async function loadCloud() {
   const cloud = $("#wordCloud");
   const meta = $("#cloudMeta");
@@ -646,8 +693,15 @@ $("#printResult").addEventListener("click", async (event) => {
       onclone: (documentClone) => {
         documentClone.querySelector(".result-actions")?.remove();
         documentClone.querySelector(".cloud-card")?.remove();
+        documentClone.querySelector(".private-card")?.remove();
       }
     });
+
+    if (shouldPreviewLongImage()) {
+      showLongImagePreview(canvas.toDataURL("image/png", 1));
+      button.textContent = "长按图片保存";
+      return;
+    }
 
     const blob = await new Promise((resolve) => {
       canvas.toBlob(resolve, "image/png", 1);
