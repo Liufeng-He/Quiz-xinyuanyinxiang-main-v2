@@ -389,7 +389,7 @@ export function createAppServer({ dataFile = DEFAULT_DATA_FILE, env = process.en
       }
 
       if (req.method !== "GET" && req.method !== "HEAD") return json(res, 405, { error: "method_not_allowed" });
-      const requested = url.pathname === "/" ? "index.html" : decodeURIComponent(url.pathname.slice(1));
+      const requested = url.pathname === "/" ? "index.html" : decodeURIComponent(url.pathname.slice(1)) + (url.pathname.endsWith("/") ? "index.html" : "");
       const filePath = normalize(join(PUBLIC_DIR, requested));
       if (relative(PUBLIC_DIR, filePath).startsWith("..")) return json(res, 403, { error: "forbidden" });
       const body = await readFile(filePath);
